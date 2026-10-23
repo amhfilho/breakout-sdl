@@ -25,6 +25,13 @@ namespace Constants {
         inline constexpr float YOffset = 150.0f;
         inline constexpr float XSpacing = 5.0f;
         inline constexpr float YSpacing = 5.0f;
+    }
 
+    namespace Paddle {
+        inline constexpr float Width = 40.0f;
+        inline constexpr float Height = 10.0f;
+        inline constexpr float InitialX = GameArea::X + (GameArea::Width - Width) / 2.0f;
+        inline constexpr float InitialY = 800.0f;
+        inline constexpr float Speed = 300.0f;
     }
 }

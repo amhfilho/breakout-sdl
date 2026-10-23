@@ -19,7 +19,7 @@ public:
     static const std::map<int, const Color*> colors;
 
     Brick(Vector2 position, const Color& color);
-    ~Brick();
+    ~Brick() = default;
 
     void Draw(SDL_Renderer* renderer);
 

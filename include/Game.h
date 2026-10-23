@@ -6,8 +6,8 @@
 
 #include <SDL3/SDL.h>
 #include <vector>
-
 #include "Brick.h"
+#include "Paddle.h"
 
 class Game {
 public:
@@ -17,16 +17,21 @@ public:
     bool running;
     bool InitializeWindow();
     void HandleInput();
+    void Update();
     void Draw();
 
 private:
     SDL_Window* window;
     SDL_Renderer* renderer;
 
+    Uint64 mTicksCount;
+    float deltaTime;
+    int paddleDirection;
+
     std::vector<Brick> bricks;
+    Paddle paddle;
 
     void DrawGameArea();
-
     void CreateBricks();
 };
 

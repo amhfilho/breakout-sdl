@@ -3,7 +3,6 @@
 //
 
 #include "Brick.h"
-
 #include "Constants.h"
 
 const std::map<int, const Color*> Brick::colors = {
@@ -16,9 +15,6 @@ const std::map<int, const Color*> Brick::colors = {
 Brick::Brick(Vector2 position, const Color& color)
     : position(position)
     , color(color) {
-}
-
-Brick::~Brick() {
 }
 
 void Brick::Draw(SDL_Renderer* renderer) {

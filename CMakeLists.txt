@@ -27,6 +27,8 @@ add_executable(${PROJECT_NAME}
         src/Brick.cpp
         include/Brick.h
         include/Vector2.h
+        src/Paddle.cpp
+        include/Paddle.h
 
 )
 

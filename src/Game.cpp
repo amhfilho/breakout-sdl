@@ -9,7 +9,12 @@
 #include "Vector2.h"
 
 Game::Game()
-    : running(true) {
+    : running(true),
+      paddle(Vector2(Constants::Paddle::InitialX, Constants::Paddle::InitialY)),
+      mTicksCount(0),
+      deltaTime(0.0f),
+      paddleDirection(0) {
+
     CreateBricks();
 }
 
@@ -57,7 +62,26 @@ void Game::HandleInput() {
                 }
                 break;
         }
+        const bool* keys = SDL_GetKeyboardState(nullptr);
+        if (keys[SDL_SCANCODE_LEFT]) {
+            paddleDirection = -1;
+        }
+        else if (keys[SDL_SCANCODE_RIGHT]) {
+            paddleDirection = 1;
+        }
+        else {
+            paddleDirection = 0;
+        }
     }
+}
+
+void Game::Update() {
+    Uint64 currentTicks = SDL_GetTicks();
+    deltaTime = (currentTicks - mTicksCount) / 1000.0f;
+    mTicksCount = currentTicks;
+
+    paddle.Move(deltaTime, paddleDirection);
+
 }
 
 void Game::Draw() {
@@ -69,6 +93,8 @@ void Game::Draw() {
     for (auto& brick : bricks) {
         brick.Draw(renderer);
     }
+
+    paddle.Draw(renderer);
 
     SDL_RenderPresent(renderer);
 }
