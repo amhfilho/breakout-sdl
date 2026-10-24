@@ -3,6 +3,8 @@
 //
 #include "Game.h"
 
+#include <random>
+
 #include "Brick.h"
 #include "Constants.h"
 #include "Colors.h"
@@ -10,10 +12,13 @@
 
 Game::Game()
     : running(true),
-      paddle(Vector2(Constants::Paddle::InitialX, Constants::Paddle::InitialY)),
       mTicksCount(0),
       deltaTime(0.0f),
-      paddleDirection(0) {
+      paddleDirection(0),
+      balls(Constants::Game::Balls),
+      score(0),
+      paddle(Vector2(Constants::Paddle::InitialX, Constants::Paddle::InitialY)),
+      ball(CreateBall()) {
 
     CreateBricks();
 }
@@ -24,7 +29,11 @@ bool Game::InitializeWindow() {
         return false;
     }
 
-    window = SDL_CreateWindow(Constants::Window::Title, Constants::Window::Width, Constants::Window::Height, 0);
+    window = SDL_CreateWindow(
+        Constants::Window::Title,
+        Constants::Window::Width,
+        Constants::Window::Height,
+        0);
     if (!window) {
         SDL_Log("Error creating window: %s", SDL_GetError());
         SDL_Quit();
@@ -43,6 +52,8 @@ bool Game::InitializeWindow() {
         SDL_Log("Unable to enable vertical sync: %s", SDL_GetError());
         return false;
     }
+
+    scoreFont = std::make_unique<FontLoader>(Constants::Score::FontPath, Constants::Score::FontSize);
 
     return true;
 }
@@ -77,10 +88,15 @@ void Game::HandleInput() {
 
 void Game::Update() {
     Uint64 currentTicks = SDL_GetTicks();
-    deltaTime = (currentTicks - mTicksCount) / 1000.0f;
+    deltaTime = static_cast<float>(currentTicks - mTicksCount) / 1000.0f;
     mTicksCount = currentTicks;
 
     paddle.Move(deltaTime, paddleDirection);
+
+    ball.Update(deltaTime);
+    ball.CheckWallCollision(gameArea);
+    ball.CheckPaddleCollision(paddle.GetRect());
+    CheckBrickCollision();
 
 }
 
@@ -96,12 +112,16 @@ void Game::Draw() {
 
     paddle.Draw(renderer);
 
+    ball.Draw(renderer);
+
+    WriteScore();
+
     SDL_RenderPresent(renderer);
 }
 
 void Game::DrawGameArea() {
     SDL_SetRenderDrawColor(renderer, black.r, black.g, black.b, black.a);
-    SDL_FRect gameArea = {
+    gameArea = {
         Constants::GameArea::X,
         Constants::GameArea::Y,
         Constants::GameArea::Width,
@@ -111,22 +131,75 @@ void Game::DrawGameArea() {
 }
 
 void Game::CreateBricks() {
-    constexpr int colorCount = 4;
     constexpr int rowsPerColor = 2;
     constexpr int columns = 12;
 
-    for (int row = 0; row < colorCount * rowsPerColor; row++) {
+    for (int row = 0; row < Constants::Brick::Rows; row++) {
         const Color& color = *Brick::colors.at(row / rowsPerColor);
         for (int column = 0; column < columns; column++) {
-            Vector2 position(Constants::GameArea::X + Constants::Brick::XOffset + column * (Constants::Brick::Width + Constants::Brick::XSpacing),
-                             Constants::GameArea::Y + Constants::Brick::YOffset + row * (Constants::Brick::Height + Constants::Brick::YSpacing));
+            Vector2 position(Constants::GameArea::X + Constants::Brick::XOffset + column *
+                (Constants::Brick::Width + Constants::Brick::XSpacing),
+                             Constants::GameArea::Y + Constants::Brick::YOffset + row *
+                (Constants::Brick::Height + Constants::Brick::YSpacing));
             bricks.emplace_back(position, color);
         }
     }
 }
 
+Ball Game::CreateBall() {
+    return {GetRandomPosition(), BallDirection{GetRandomXDirection(), 1}};
+}
+
+int Game::GetRandomXDirection() {
+    static std::mt19937 generator{std::random_device{}()};
+    std::bernoulli_distribution coin(0.5);
+    return coin(generator) ? 1 : -1;
+}
+
+Vector2 Game::GetRandomPosition() {
+    static std::mt19937 generator{std::random_device{}()};
+    std::uniform_real_distribution<float> distributionX(
+        Constants::GameArea::X,
+        Constants::GameArea::X + Constants::GameArea::Width - Constants::Ball::SquareSize);
+
+    float y = Constants::GameArea::Y + Constants::GameArea::Height / 2.0f;
+    return Vector2(distributionX(generator), y);
+}
+
+void Game::CheckBrickCollision() {
+    bool collides = false;
+    for (auto it = bricks.begin(); it != bricks.end(); ) {
+        if (ball.CheckBrickCollision(*it)) {
+            score += it->GetScore();
+            it = bricks.erase(it);
+            collides = true;
+            break;
+        }
+        ++it;
+    }
+    if (collides) {
+        ball.BounceBallDown();
+    }
+}
+
+void Game::WriteScore() {
+    constexpr float margin = 5.0f;
+
+    const float topRowY = Constants::GameArea::Y + Constants::Brick::YOffset;
+    const float bottomY = topRowY - margin;
+    const float textX = Constants::GameArea::X + margin;
+
+    std::string text = std::to_string(score);
+    if (text.size() < 3) {
+        text.insert(0, 3 - text.size(), '0');
+    }
+
+    scoreFont->DrawText(renderer, text, textX, bottomY, white);
+}
+
 Game::~Game() {
     bricks.clear();
+    scoreFont.reset();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

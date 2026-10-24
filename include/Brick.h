@@ -13,10 +13,12 @@ class Brick {
 
 private:
     Vector2 position;
-    const Color& color;
+    const Color* color;
+    int score;
 public:
     // Pointers avoid static-initialization-order issues with the globals in Colors.cpp
     static const std::map<int, const Color*> colors;
+    static const std::map<const Color*, int> scores;
 
     Brick(Vector2 position, const Color& color);
     ~Brick() = default;
@@ -24,5 +26,6 @@ public:
     void Draw(SDL_Renderer* renderer);
 
     SDL_FRect GetRect();
+    int GetScore() const;
 };
 

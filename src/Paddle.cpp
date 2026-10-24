@@ -20,6 +20,12 @@ void Paddle::Draw(SDL_Renderer* renderer) {
 
 void Paddle::Move(float deltaTime, int direction) {
     position.x += direction * Constants::Paddle::Speed * deltaTime;
+    if (position.x < Constants::GameArea::X) {
+        position.x = Constants::GameArea::X;
+    }
+    else if (position.x + Constants::Paddle::Width > Constants::GameArea::X + Constants::GameArea::Width) {
+        position.x = Constants::GameArea::X + Constants::GameArea::Width - Constants::Paddle::Width;
+    }
 }
 
 SDL_FRect Paddle::GetRect() {
