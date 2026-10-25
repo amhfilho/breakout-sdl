@@ -19,6 +19,8 @@ public:
 
     bool IsLoaded() const { return font != nullptr; }
 
+    int GetHeight() const { return font ? TTF_GetFontHeight(font) : 0; }
+
     // Draws text with its bottom edge at bottomY
     void DrawText(SDL_Renderer* renderer, const std::string& text, float x, float bottomY, const Color& color);
 

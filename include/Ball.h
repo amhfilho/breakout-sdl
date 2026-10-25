@@ -21,6 +21,8 @@ public:
     bool CheckBrickCollision(Brick &brick);
     void BounceBallDown();
 
+    bool isMissed(const SDL_FRect& gameArea);
+
     void Draw(SDL_Renderer* renderer);
     SDL_FRect GetRect();
 

@@ -38,6 +38,7 @@ private:
     int score;
     Paddle paddle;
     Ball ball;
+    int currentBall;
     std::unique_ptr<FontLoader> scoreFont;
 
     void DrawGameArea();
@@ -49,6 +50,8 @@ private:
     void CheckBrickCollision();
 
     void WriteScore();
+
+    void WriteCurrentBall();
 
     static int GetRandomXDirection();
 };

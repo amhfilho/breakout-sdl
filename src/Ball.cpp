@@ -79,6 +79,10 @@ void Ball::BounceBallDown() {
     direction.y = 1;
 }
 
+bool Ball::isMissed(const SDL_FRect &gameArea) {
+    return position.y > gameArea.y + gameArea.h;
+}
+
 void Ball::Draw(SDL_Renderer *renderer) {
     SDL_FRect rect = GetRect();
     SDL_SetRenderDrawColor(renderer, white.r, white.g, white.b, white.a);

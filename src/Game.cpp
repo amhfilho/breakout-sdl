@@ -18,7 +18,8 @@ Game::Game()
       balls(Constants::Game::Balls),
       score(0),
       paddle(Vector2(Constants::Paddle::InitialX, Constants::Paddle::InitialY)),
-      ball(CreateBall()) {
+      ball(CreateBall()),
+      currentBall(1) {
 
     CreateBricks();
 }
@@ -98,6 +99,12 @@ void Game::Update() {
     ball.CheckPaddleCollision(paddle.GetRect());
     CheckBrickCollision();
 
+    if (ball.isMissed(gameArea)) {
+        currentBall++;
+        ball = CreateBall();
+    }
+
+
 }
 
 void Game::Draw() {
@@ -115,6 +122,8 @@ void Game::Draw() {
     ball.Draw(renderer);
 
     WriteScore();
+
+    WriteCurrentBall();
 
     SDL_RenderPresent(renderer);
 }
@@ -195,6 +204,14 @@ void Game::WriteScore() {
     }
 
     scoreFont->DrawText(renderer, text, textX, bottomY, white);
+}
+
+void Game::WriteCurrentBall() {
+    constexpr float margin = 5.0f;
+
+    const float bottomY = Constants::GameArea::Y + margin + static_cast<float>(scoreFont->GetHeight());
+
+    scoreFont->DrawText(renderer, std::to_string(currentBall), 500.0f, bottomY, white);
 }
 
 Game::~Game() {
