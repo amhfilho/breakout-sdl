@@ -21,14 +21,25 @@ public:
 
     int GetHeight() const { return font ? TTF_GetFontHeight(font) : 0; }
 
+    // Changes the point size used by subsequent DrawText calls
+    void SetSize(float size);
+
     // Draws text with its bottom edge at bottomY
     void DrawText(SDL_Renderer* renderer, const std::string& text, float x, float bottomY, const Color& color);
+
+    float GetTextureWidth() const;
+
+    // Width in pixels the text would occupy at the current size
+    float MeasureTextWidth(const std::string& text) const;
 
 private:
     TTF_Font* font = nullptr;
     SDL_Texture* texture = nullptr;
     std::string cachedText;
     Color cachedColor{0, 0, 0};
+
+    float textureWidth;
+    float textureHeight;
 
     void ClearTexture();
 };

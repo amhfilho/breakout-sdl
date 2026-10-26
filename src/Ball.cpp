@@ -32,7 +32,12 @@ void Ball::CheckWallCollision(const SDL_FRect &gameArea) {
     }
 }
 
-void Ball::CheckPaddleCollision(const SDL_FRect &paddleRect) {
+bool Ball::CheckPaddleCollision(const SDL_FRect &paddleRect) {
+    bool collides = false;
+    // A ball already moving up is still overlapping the paddle from a previous hit
+    if (direction.y < 0) {
+        return false;
+    }
     SDL_FRect ballRect = GetRect();
     float sectionWidth = paddleRect.w / 4.0f;
     SDL_FRect leftOuter = {paddleRect.x, paddleRect.y, sectionWidth, paddleRect.h};
@@ -44,26 +49,37 @@ void Ball::CheckPaddleCollision(const SDL_FRect &paddleRect) {
         direction.y = -1;
         direction.x = -1;
         SetVelocityFromAngle(Constants::Ball::OuterBounceAngle);
+        collides = true;
     }
     else if (SDL_HasRectIntersectionFloat(&ballRect, &leftInner)) {
         direction.y = -1;
         direction.x = -1;
-        ballVelocity = Constants::Ball::InitialVelocity;
+        ballVelocity.x = std::max(ballVelocity.x, Constants::Ball::InitialVelocity.x);
+        ballVelocity.y = std::max(ballVelocity.y, Constants::Ball::InitialVelocity.y);
+        collides = true;
     }
     else if (SDL_HasRectIntersectionFloat(&ballRect, &rightInner)) {
         direction.y = -1;
         direction.x = 1;
-        ballVelocity = Constants::Ball::InitialVelocity;
+        ballVelocity.x = std::max(ballVelocity.x, Constants::Ball::InitialVelocity.x);
+        ballVelocity.y = std::max(ballVelocity.y, Constants::Ball::InitialVelocity.y);
+        collides = true;
     }
     else if (SDL_HasRectIntersectionFloat(&ballRect, &rightOuter)) {
         direction.y = -1;
         direction.x = 1;
         SetVelocityFromAngle(Constants::Ball::OuterBounceAngle);
+        collides = true;
     }
+    return collides;
+
 }
 
 void Ball::SetVelocityFromAngle(float degreesFromHorizontal) {
-    const Vector2 initial = Constants::Ball::InitialVelocity;
+    const Vector2 initial = {
+        std::max(ballVelocity.x, Constants::Ball::InitialVelocity.x),
+        std::max(ballVelocity.y, Constants::Ball::InitialVelocity.y)
+    };
     const float speed = std::sqrt(initial.x * initial.x + initial.y * initial.y);
     const float radians = degreesFromHorizontal * std::numbers::pi_v<float> / 180.0f;
     ballVelocity = Vector2(speed * std::cos(radians), speed * std::sin(radians));
@@ -80,13 +96,18 @@ void Ball::BounceBallDown() {
 }
 
 bool Ball::isMissed(const SDL_FRect &gameArea) {
-    return position.y > gameArea.y + gameArea.h;
+    return position.y > (gameArea.y + gameArea.h);
 }
 
 void Ball::Draw(SDL_Renderer *renderer) {
     SDL_FRect rect = GetRect();
     SDL_SetRenderDrawColor(renderer, white.r, white.g, white.b, white.a);
     SDL_RenderFillRect(renderer, &rect);
+}
+
+void Ball::IncreaseSpeedPercentageBy(float amount) {
+    ballVelocity.x *= 1.0f + amount/100;
+    ballVelocity.y *= 1.0f + amount/100;
 }
 
 SDL_FRect Ball::GetRect() {

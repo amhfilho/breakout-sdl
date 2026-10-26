@@ -30,6 +30,20 @@ void FontLoader::ClearTexture() {
     }
 }
 
+void FontLoader::SetSize(float size) {
+    if (!font) {
+        return;
+    }
+    if (TTF_GetFontSize(font) == size) {
+        return;
+    }
+    if (!TTF_SetFontSize(font, size)) {
+        SDL_Log("Error setting font size: %s", SDL_GetError());
+        return;
+    }
+    ClearTexture();
+}
+
 void FontLoader::DrawText(SDL_Renderer* renderer, const std::string& text, float x, float bottomY, const Color& color) {
     if (!font) {
         return;
@@ -50,6 +64,9 @@ void FontLoader::DrawText(SDL_Renderer* renderer, const std::string& text, float
             SDL_Log("Error creating text texture: %s", SDL_GetError());
             return;
         }
+        if (texture != nullptr && !SDL_GetTextureSize(texture, &textureWidth, &textureHeight)) {
+            SDL_Log("Error getting texture size: %s", SDL_GetError());
+        }
         cachedText = text;
         cachedColor = color;
     }
@@ -57,4 +74,17 @@ void FontLoader::DrawText(SDL_Renderer* renderer, const std::string& text, float
     SDL_FRect dst{x, bottomY - static_cast<float>(texture->h), static_cast<float>(texture->w),
                   static_cast<float>(texture->h)};
     SDL_RenderTexture(renderer, texture, nullptr, &dst);
+}
+
+float FontLoader::MeasureTextWidth(const std::string& text) const {
+    int w = 0;
+    int h = 0;
+    if (!font || !TTF_GetStringSize(font, text.c_str(), text.size(), &w, &h)) {
+        return 0.0f;
+    }
+    return static_cast<float>(w);
+}
+
+float FontLoader::GetTextureWidth() const {
+    return textureWidth;
 }

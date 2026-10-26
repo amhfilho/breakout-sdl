@@ -15,13 +15,22 @@
 
 class Game {
 public:
+    enum class GameState {
+        Playing, GameOver
+    };
+
     explicit Game();
     ~Game();
 
     bool running;
+    GameState state;
     bool InitializeWindow();
+
+    void Reset();
+
     void HandleInput();
     void Update();
+
     void Draw();
 
 private:
@@ -39,8 +48,10 @@ private:
     Paddle paddle;
     Ball ball;
     int currentBall;
+    int paddleHits;
     std::unique_ptr<FontLoader> scoreFont;
 
+    SDL_FRect CreateGameArea();
     void DrawGameArea();
     void CreateBricks();
     Ball CreateBall();
@@ -54,5 +65,9 @@ private:
     void WriteCurrentBall();
 
     static int GetRandomXDirection();
+
+    void WriteGameOver();
+
+    void WriteTextCenter(const char *text, float size, float y);
 };
 

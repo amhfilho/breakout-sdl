@@ -16,7 +16,7 @@ public:
     void Update(float deltaTime);
     void CheckWallCollision(const SDL_FRect& gameArea);
 
-    void CheckPaddleCollision(const SDL_FRect &paddleRect);
+    bool CheckPaddleCollision(const SDL_FRect &paddleRect);
 
     bool CheckBrickCollision(Brick &brick);
     void BounceBallDown();
@@ -24,6 +24,9 @@ public:
     bool isMissed(const SDL_FRect& gameArea);
 
     void Draw(SDL_Renderer* renderer);
+
+    void IncreaseSpeedPercentageBy(float amount);
+
     SDL_FRect GetRect();
 
 private:
@@ -32,4 +35,5 @@ private:
     Vector2 position;
     BallDirection direction;
     Vector2 ballVelocity;
+
 };

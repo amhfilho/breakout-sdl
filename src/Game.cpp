@@ -12,14 +12,17 @@
 
 Game::Game()
     : running(true),
+      state(GameState::Playing),
       mTicksCount(0),
       deltaTime(0.0f),
+      gameArea(CreateGameArea()),
       paddleDirection(0),
       balls(Constants::Game::Balls),
       score(0),
       paddle(Vector2(Constants::Paddle::InitialX, Constants::Paddle::InitialY)),
       ball(CreateBall()),
-      currentBall(1) {
+      currentBall(1),
+      paddleHits(0) {
 
     CreateBricks();
 }
@@ -59,6 +62,17 @@ bool Game::InitializeWindow() {
     return true;
 }
 
+void Game::Reset() {
+    state = GameState::Playing;
+    currentBall = 1;
+    mTicksCount = SDL_GetTicks();
+    score = 0;
+    paddleHits = 0;
+    ball = CreateBall();
+    bricks.clear();
+    CreateBricks();
+}
+
 void Game::HandleInput() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
@@ -71,6 +85,14 @@ void Game::HandleInput() {
                     case SDLK_ESCAPE:
                         running = false;
                         break;
+                }
+                if (state == GameState::GameOver) {
+                    if (event.key.key == SDLK_SPACE) {
+                        Reset();
+                    }
+                    else {
+                        continue;
+                    }
                 }
                 break;
         }
@@ -88,6 +110,9 @@ void Game::HandleInput() {
 }
 
 void Game::Update() {
+    if (state == GameState::GameOver) {
+        return;
+    }
     Uint64 currentTicks = SDL_GetTicks();
     deltaTime = static_cast<float>(currentTicks - mTicksCount) / 1000.0f;
     mTicksCount = currentTicks;
@@ -96,14 +121,28 @@ void Game::Update() {
 
     ball.Update(deltaTime);
     ball.CheckWallCollision(gameArea);
-    ball.CheckPaddleCollision(paddle.GetRect());
+    if (ball.CheckPaddleCollision(paddle.GetRect())) {
+        paddleHits++;
+        if (paddleHits == 4) {
+            ball.IncreaseSpeedPercentageBy(25.0f);
+        }
+        else if (paddleHits == 12) {
+            ball.IncreaseSpeedPercentageBy(25.0f);
+        }
+    }
     CheckBrickCollision();
 
     if (ball.isMissed(gameArea)) {
-        currentBall++;
-        ball = CreateBall();
-    }
+        paddleHits = 0;
+        if (currentBall + 1 > balls) {
+            state = GameState::GameOver;
+        }
+        else {
+            currentBall++;
+            ball = CreateBall();
+        }
 
+    }
 
 }
 
@@ -125,17 +164,24 @@ void Game::Draw() {
 
     WriteCurrentBall();
 
+    if (state == GameState::GameOver) {
+        WriteGameOver();
+    }
+
     SDL_RenderPresent(renderer);
 }
 
-void Game::DrawGameArea() {
-    SDL_SetRenderDrawColor(renderer, black.r, black.g, black.b, black.a);
-    gameArea = {
+SDL_FRect Game::CreateGameArea() {
+    return SDL_FRect {
         Constants::GameArea::X,
         Constants::GameArea::Y,
         Constants::GameArea::Width,
         Constants::GameArea::Height
     };
+}
+
+void Game::DrawGameArea() {
+    SDL_SetRenderDrawColor(renderer, black.r, black.g, black.b, black.a);
     SDL_RenderFillRect(renderer, &gameArea);
 }
 
@@ -182,6 +228,9 @@ void Game::CheckBrickCollision() {
             score += it->GetScore();
             it = bricks.erase(it);
             collides = true;
+            if (it->GetScore() == 5 || it->GetScore() == 7) {
+                ball.IncreaseSpeedPercentageBy(75.0f);
+            }
             break;
         }
         ++it;
@@ -190,6 +239,8 @@ void Game::CheckBrickCollision() {
         ball.BounceBallDown();
     }
 }
+
+
 
 void Game::WriteScore() {
     constexpr float margin = 5.0f;
@@ -202,16 +253,26 @@ void Game::WriteScore() {
     if (text.size() < 3) {
         text.insert(0, 3 - text.size(), '0');
     }
-
+    scoreFont->SetSize(48.0f);
     scoreFont->DrawText(renderer, text, textX, bottomY, white);
 }
 
 void Game::WriteCurrentBall() {
     constexpr float margin = 5.0f;
-
     const float bottomY = Constants::GameArea::Y + margin + static_cast<float>(scoreFont->GetHeight());
-
     scoreFont->DrawText(renderer, std::to_string(currentBall), 500.0f, bottomY, white);
+}
+
+void Game::WriteGameOver() {
+    WriteTextCenter("Game Over", 48.0f, 500.0f);
+    WriteTextCenter("Press SPACE to play again", 24.0f, 550.0f);
+}
+
+void Game::WriteTextCenter(const char* text, float size, float y) {
+    scoreFont->SetSize(size);
+    const float textWidth = scoreFont->MeasureTextWidth(text);
+    const float x = Constants::GameArea::X + (Constants::GameArea::Width - textWidth) / 2.0f;
+    scoreFont->DrawText(renderer, text, x, y, white);
 }
 
 Game::~Game() {
